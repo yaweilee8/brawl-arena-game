@@ -2,35 +2,44 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>荒野乱斗 - Brawl Arena</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>荒野乱斗移动版 - Brawl Arena Mobile</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
         
-        body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Arial', sans-serif;
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Arial', sans-serif;
         }
         
         .game-container {
             position: relative;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.3);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         #gameCanvas {
             display: block;
             background: #2d4a3e;
+            max-width: 100%;
+            max-height: 100%;
         }
         
         .ui-overlay {
@@ -42,34 +51,16 @@
             pointer-events: none;
         }
         
-        .health-bar {
+        /* Health bar at top center */
+        .health-bar-container {
             position: absolute;
-            bottom: 20px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             width: 200px;
-            height: 20px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid #fff;
-        }
-        
-        .health-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff4444, #ff8844);
-            transition: width 0.2s;
-        }
-        
-        .health-bar-container {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 250px;
-            height: 30px;
+            height: 24px;
             background: rgba(0, 0, 0, 0.8);
-            border-radius: 15px;
+            border-radius: 12px;
             overflow: hidden;
             border: 2px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.5);
@@ -110,15 +101,16 @@
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         }
         
+        /* Super bar */
         .super-bar-container {
             position: absolute;
-            bottom: 55px;
+            top: 38px;
             left: 50%;
             transform: translateX(-50%);
-            width: 180px;
-            height: 15px;
+            width: 150px;
+            height: 12px;
             background: rgba(0, 0, 0, 0.8);
-            border-radius: 10px;
+            border-radius: 6px;
             overflow: hidden;
             border: 2px solid rgba(255, 255, 255, 0.2);
         }
@@ -153,14 +145,24 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: #fff;
-            font-size: 10px;
+            font-size: 8px;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         }
         
+        .super-bar-container.super-ready {
+            animation: superReady 0.5s infinite;
+        }
+        
+        @keyframes superReady {
+            0%, 100% { box-shadow: 0 0 5px #ff00ff; }
+            50% { box-shadow: 0 0 20px #ff00ff, 0 0 30px #ff00ff; }
+        }
+        
+        /* Ammo bar */
         .ammo-bar {
             position: absolute;
-            bottom: 75px;
+            top: 55px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -168,8 +170,8 @@
         }
         
         .ammo-bullet {
-            width: 15px;
-            height: 25px;
+            width: 12px;
+            height: 20px;
             background: linear-gradient(180deg, #ffff44, #ffaa00);
             border-radius: 3px;
             border: 1px solid #fff;
@@ -180,55 +182,205 @@
             opacity: 0.3;
         }
         
-        .ammo-bullet.reloading {
-            background: linear-gradient(135deg, #00bfff, #0080ff);
-            animation: reloadPulse 0.5s infinite;
-        }
-        
-        @keyframes reloadPulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 191, 255, 0.5); }
-            50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(0, 191, 255, 0.8); }
-        }
-        
+        /* Score board */
         .score-board {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 10px;
+            left: 10px;
             color: #fff;
-            font-size: 18px;
+            font-size: 14px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.5);
+            padding: 8px;
+            border-radius: 10px;
         }
         
+        /* Kill feed */
+        .kill-feed {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #fff;
+            font-size: 12px;
+            text-align: right;
+        }
+        
+        .kill-message {
+            background: rgba(0,0,0,0.6);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            animation: slideIn 0.5s;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* Virtual Joystick - Left Bottom */
+        .joystick-container {
+            position: absolute;
+            bottom: 80px;
+            left: 60px;
+            width: 120px;
+            height: 120px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+        
+        .joystick-base {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            backdrop-filter: blur(5px);
+        }
+        
+        .joystick-stick {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(200,200,200,0.6));
+            border: 2px solid rgba(255,255,255,0.9);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.05s;
+        }
+        
+        .joystick-stick.active {
+            background: linear-gradient(135deg, rgba(100,200,255,0.9), rgba(80,150,255,0.7));
+        }
+        
+        /* Action Buttons - Right Bottom */
+        .action-buttons {
+            position: absolute;
+            bottom: 60px;
+            right: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 15px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+        
+        .btn-shoot {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,200,50,0.8), rgba(255,150,0,0.6));
+            border: 3px solid rgba(255,255,255,0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(255,150,0,0.4);
+            transition: all 0.1s;
+        }
+        
+        .btn-shoot:active, .btn-shoot.active {
+            transform: scale(0.92);
+            background: linear-gradient(135deg, rgba(255,220,100,0.95), rgba(255,180,50,0.8));
+            box-shadow: 0 2px 10px rgba(255,150,0,0.6), inset 0 0 20px rgba(255,255,255,0.3);
+        }
+        
+        .btn-shoot::before {
+            content: '🔫';
+        }
+        
+        .btn-super {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(180,50,255,0.8), rgba(255,50,180,0.6));
+            border: 3px solid rgba(255,255,255,0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(200,50,255,0.4);
+            transition: all 0.1s;
+            margin-right: 10px;
+        }
+        
+        .btn-super:active, .btn-super.active {
+            transform: scale(0.92);
+            background: linear-gradient(135deg, rgba(200,100,255,0.95), rgba(255,100,200,0.8));
+            box-shadow: 0 2px 10px rgba(200,50,255,0.6), inset 0 0 20px rgba(255,255,255,0.3);
+        }
+        
+        .btn-super.ready {
+            animation: superButtonPulse 1s infinite;
+            border-color: #ffff00;
+        }
+        
+        @keyframes superButtonPulse {
+            0%, 100% { box-shadow: 0 4px 20px rgba(200,50,255,0.4); }
+            50% { box-shadow: 0 4px 30px rgba(255,255,0,0.8), 0 0 40px rgba(255,0,255,0.6); }
+        }
+        
+        .btn-super::before {
+            content: '⚡';
+        }
+        
+        /* Aim control area (invisible, covers right side of screen) */
+        .aim-area {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            pointer-events: auto;
+            z-index: 50;
+        }
+        
+        /* Character selector */
         .character-selector {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            padding: 30px;
+            background: rgba(0,0,0,0.95);
+            padding: 20px;
             border-radius: 20px;
             text-align: center;
-            pointer-events: all;
+            pointer-events: auto;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 200;
         }
         
         .character-selector h2 {
             color: #fff;
-            margin-bottom: 20px;
-            font-size: 28px;
+            margin-bottom: 15px;
+            font-size: 22px;
         }
         
         .brawler-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 15px;
         }
         
         .brawler-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: 3px solid transparent;
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 12px 8px;
             cursor: pointer;
             transition: all 0.3s;
             position: relative;
@@ -248,127 +400,197 @@
         .brawler-card.focused::before {
             content: '▶';
             position: absolute;
-            left: -25px;
+            left: -15px;
             top: 50%;
             transform: translateY(-50%);
             color: #ffff00;
-            font-size: 24px;
+            font-size: 16px;
             animation: pulse 0.8s infinite;
         }
         
-        .keyboard-hint {
-            color: #aaa;
-            font-size: 14px;
-            margin-top: 15px;
-        }
-        
-        .keyboard-hint span {
-            background: rgba(255,255,255,0.2);
-            padding: 3px 8px;
-            border-radius: 5px;
-            margin: 0 3px;
-            color: #fff;
-        }
-        
         .brawler-icon {
-            width: 60px;
-            height: 60px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
-            margin: 0 auto 10px;
+            margin: 0 auto 8px;
         }
         
         .brawler-card h3 {
             color: #fff;
-            font-size: 16px;
+            font-size: 13px;
         }
         
         .brawler-card p {
             color: #aaa;
-            font-size: 12px;
-            margin-top: 5px;
+            font-size: 10px;
+            margin-top: 3px;
         }
         
         .start-btn {
             background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
             color: #fff;
             border: none;
-            padding: 15px 40px;
-            font-size: 20px;
-            border-radius: 30px;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 25px;
             cursor: pointer;
             transition: transform 0.2s;
         }
         
         .start-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
         
         .controls-hint {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            color: #fff;
-            font-size: 14px;
-            text-align: right;
-            opacity: 0.7;
-        }
-        
-        .kill-feed {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: #fff;
-            font-size: 14px;
-            text-align: right;
-        }
-        
-        .kill-message {
-            background: rgba(0,0,0,0.6);
-            padding: 5px 10px;
-            border-radius: 5px;
-            margin-bottom: 5px;
-            animation: slideIn 0.5s;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .super-charge {
-            position: absolute;
-            bottom: 85px;
+            bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
-            width: 180px;
-            height: 10px;
+            color: #fff;
+            font-size: 12px;
+            text-align: center;
+            opacity: 0.7;
             background: rgba(0,0,0,0.5);
-            border-radius: 5px;
-            overflow: hidden;
-            border: 1px solid #fff;
+            padding: 5px 15px;
+            border-radius: 15px;
         }
         
-        .super-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff00ff, #ff00aa);
-            transition: width 0.2s;
+        /* Pause button */
+        .pause-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 100;
         }
         
-        .super-ready {
-            animation: pulse 0.5s infinite;
+        /* Orientation warning */
+        .orientation-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
         }
         
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 5px #ff00ff; }
-            50% { box-shadow: 0 0 20px #ff00ff, 0 0 30px #ff00ff; }
+        .orientation-warning .icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: rotatePhone 2s infinite;
+        }
+        
+        @keyframes rotatePhone {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            75% { transform: rotate(90deg); }
+        }
+        
+        @media screen and (orientation: portrait) and (max-width: 600px) {
+            .orientation-warning {
+                display: flex;
+            }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-height: 500px) {
+            .joystick-container {
+                bottom: 50px;
+                left: 40px;
+                width: 100px;
+                height: 100px;
+            }
+            
+            .joystick-base {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .joystick-stick {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .btn-shoot {
+                width: 70px;
+                height: 70px;
+                font-size: 20px;
+            }
+            
+            .btn-super {
+                width: 55px;
+                height: 55px;
+                font-size: 16px;
+            }
+            
+            .action-buttons {
+                bottom: 40px;
+                right: 25px;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .joystick-container {
+                bottom: 100px;
+                left: 80px;
+                width: 140px;
+                height: 140px;
+            }
+            
+            .joystick-base {
+                width: 140px;
+                height: 140px;
+            }
+            
+            .joystick-stick {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .btn-shoot {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .btn-super {
+                width: 80px;
+                height: 80px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Orientation Warning -->
+    <div class="orientation-warning" id="orientationWarning">
+        <div class="icon">📱</div>
+        <h2>请横屏游戏</h2>
+        <p>请将手机旋转至横屏模式以获得最佳游戏体验</p>
+    </div>
+
     <div class="game-container">
-        <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        <canvas id="gameCanvas"></canvas>
         
         <div class="ui-overlay">
+            <!-- Top UI -->
             <div class="score-board">
                 <div>🔴 红队: <span id="redScore">0</span></div>
                 <div>🔵 蓝队: <span id="blueScore">0</span></div>
@@ -382,7 +604,7 @@
                 <div class="health-label">HP</div>
             </div>
             
-            <div class="super-bar-container">
+            <div class="super-bar-container" id="superBarContainer">
                 <div class="super-fill" id="superFill" style="width: 0%"></div>
                 <div class="super-label">SUPER</div>
             </div>
@@ -393,11 +615,27 @@
                 <div class="ammo-bullet"></div>
             </div>
             
+            <div class="pause-btn" id="pauseBtn">⏸</div>
+            
+            <!-- Touch Controls -->
+            <div class="joystick-container" id="joystickContainer">
+                <div class="joystick-base"></div>
+                <div class="joystick-stick" id="joystickStick"></div>
+            </div>
+            
+            <div class="action-buttons">
+                <div class="btn-super" id="btnSuper"></div>
+                <div class="btn-shoot" id="btnShoot"></div>
+            </div>
+            
+            <div class="aim-area" id="aimArea"></div>
+            
             <div class="controls-hint" id="controlsHint">
-                选择: ↑↓←→ | 开始: Enter | 游戏中: WASD移动 鼠标瞄准 左键射击 右键大招
+                拖动左侧摇杆移动 | 触摸右侧瞄准 | 点击按钮射击
             </div>
         </div>
         
+        <!-- Character Selector -->
         <div class="character-selector" id="charSelector">
             <h2>🎮 选择你的英雄</h2>
             <div class="brawler-grid">
@@ -432,10 +670,7 @@
                     <p>炸弹 | 范围</p>
                 </div>
             </div>
-            <button class="start-btn" id="startBtn">开始游戏 [回车]</button>
-            <div class="keyboard-hint">
-                <span>↑</span><span>↓</span><span>←</span><span>→</span> 选择英雄 | <span>Enter</span> 确认
-            </div>
+            <button class="start-btn" id="startBtn">开始游戏</button>
         </div>
     </div>
 
@@ -448,6 +683,33 @@
         let selectedBrawler = null;
         let mouseX = 0;
         let mouseY = 0;
+        let isPaused = false;
+        
+        // Touch controls state
+        const touchState = {
+            joystick: {
+                active: false,
+                touchId: null,
+                centerX: 0,
+                centerY: 0,
+                currentX: 0,
+                currentY: 0,
+                dx: 0,
+                dy: 0,
+                angle: 0,
+                force: 0
+            },
+            aim: {
+                active: false,
+                touchId: null,
+                lastX: 0,
+                lastY: 0,
+                deltaX: 0,
+                deltaY: 0
+            },
+            shoot: { active: false },
+            super: { active: false }
+        };
         
         // Camera
         let camera = { x: 0, y: 0 };
@@ -455,6 +717,29 @@
         // Map
         const MAP_WIDTH = 2000;
         const MAP_HEIGHT = 1500;
+        
+        // Canvas sizing
+        function resizeCanvas() {
+            const container = document.querySelector('.game-container');
+            const aspectRatio = MAP_WIDTH / MAP_HEIGHT;
+            let width = container.clientWidth;
+            let height = container.clientHeight;
+            
+            // Maintain aspect ratio
+            if (width / height > aspectRatio) {
+                width = height * aspectRatio;
+            } else {
+                height = width / aspectRatio;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Update joystick position reference
+            updateJoystickPosition();
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
         
         // Walls and obstacles
         const walls = [
@@ -592,7 +877,17 @@
         // Keys
         const keys = {};
         
-        // Character selection with keyboard
+        // Joystick position
+        let joystickRect = null;
+        
+        function updateJoystickPosition() {
+            const container = document.getElementById('joystickContainer');
+            if (container) {
+                joystickRect = container.getBoundingClientRect();
+            }
+        }
+        
+        // Character selection
         const brawlerCards = document.querySelectorAll('.brawler-card');
         let focusedIndex = 0;
         let selectedIndex = -1;
@@ -618,52 +913,8 @@
             selectedBrawler = selectedIndex >= 0 ? brawlerCards[selectedIndex].dataset.brawler : null;
         }
         
-        // Initial focus
         updateFocus();
         
-        // Keyboard navigation for character selection
-        function handleCharacterSelectKey(e) {
-            if (gameRunning) return;
-            
-            const currentRow = Math.floor(focusedIndex / cols);
-            const currentCol = focusedIndex % cols;
-            
-            switch(e.key) {
-                case 'ArrowUp':
-                    e.preventDefault();
-                    if (currentRow > 0) focusedIndex -= cols;
-                    updateFocus();
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    if (currentRow < rows - 1) focusedIndex += cols;
-                    updateFocus();
-                    break;
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    if (currentCol > 0) focusedIndex--;
-                    updateFocus();
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    if (currentCol < cols - 1) focusedIndex++;
-                    updateFocus();
-                    break;
-                case 'Enter':
-                    e.preventDefault();
-                    if (document.getElementById('charSelector').style.display !== 'none') {
-                        selectedIndex = focusedIndex;
-                        updateSelection();
-                        // Auto start game after selection
-                        setTimeout(() => {
-                            document.getElementById('startBtn').click();
-                        }, 200);
-                    }
-                    break;
-            }
-        }
-        
-        // Mouse click fallback (optional)
         brawlerCards.forEach((card, index) => {
             card.addEventListener('click', () => {
                 focusedIndex = index;
@@ -676,26 +927,25 @@
         // Start game
         document.getElementById('startBtn').addEventListener('click', () => {
             if (selectedBrawler === null) {
-                // Auto-select focused brawler if none selected
                 selectedIndex = focusedIndex;
                 selectedBrawler = brawlerCards[focusedIndex].dataset.brawler;
                 updateSelection();
             }
             
-            // Hide character selector
             document.getElementById('charSelector').style.display = 'none';
-            
-            // Update controls hint for in-game
-            document.getElementById('controlsHint').textContent = 'WASD移动 | 鼠标瞄准 | 左键射击 | 空格大招';
+            document.getElementById('controlsHint').textContent = '拖动摇杆移动 | 触摸右侧瞄准';
             initGame();
             gameRunning = true;
+            resizeCanvas();
             gameLoop();
         });
         
+        // Pause button
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            isPaused = !isPaused;
+        });
+        
         function initGame() {
-            // Update controls hint for in-game
-            document.getElementById('controlsHint').innerHTML = 'WASD移动 | 鼠标瞄准 | <span style="color:#ffff00">左键</span>射击 | <span style="color:#ff00ff">右键</span>大招';
-            
             const stats = brawlerTypes[selectedBrawler];
             player.type = stats;
             player.health = stats.maxHealth;
@@ -703,10 +953,9 @@
             player.ammo = stats.ammo;
             player.maxAmmo = stats.ammo;
             player.speed = stats.speed;
-            player.reloadTimer = 0;  // Reset reload timer on game start
-            player.superCharge = 0;  // Reset super charge
+            player.reloadTimer = 0;
+            player.superCharge = 0;
             
-            // Spawn enemies
             const types = Object.keys(brawlerTypes);
             for (let i = 0; i < enemyCount; i++) {
                 const typeKey = types[Math.floor(Math.random() * types.length)];
@@ -734,7 +983,6 @@
                 });
             }
             
-            // Spawn power-ups
             for (let i = 0; i < 8; i++) {
                 spawnPowerup();
             }
@@ -753,14 +1001,286 @@
             });
         }
         
-        // Input handling
+        // Touch event handlers
+        function initTouchControls() {
+            const joystick = document.getElementById('joystickContainer');
+            const stick = document.getElementById('joystickStick');
+            const btnShoot = document.getElementById('btnShoot');
+            const btnSuper = document.getElementById('btnSuper');
+            const aimArea = document.getElementById('aimArea');
+            
+            // Joystick touch
+            joystick.addEventListener('touchstart', handleJoystickStart, { passive: false });
+            joystick.addEventListener('touchmove', handleJoystickMove, { passive: false });
+            joystick.addEventListener('touchend', handleJoystickEnd, { passive: false });
+            joystick.addEventListener('touchcancel', handleJoystickEnd, { passive: false });
+            
+            // Aim area touch
+            aimArea.addEventListener('touchstart', handleAimStart, { passive: false });
+            aimArea.addEventListener('touchmove', handleAimMove, { passive: false });
+            aimArea.addEventListener('touchend', handleAimEnd, { passive: false });
+            aimArea.addEventListener('touchcancel', handleAimEnd, { passive: false });
+            
+            // Shoot button
+            btnShoot.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchState.shoot.active = true;
+                btnShoot.classList.add('active');
+                shoot(player);
+            }, { passive: false });
+            
+            btnShoot.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touchState.shoot.active = false;
+                btnShoot.classList.remove('active');
+            }, { passive: false });
+            
+            // Super button
+            btnSuper.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchState.super.active = true;
+                btnSuper.classList.add('active');
+                useSuper();
+            }, { passive: false });
+            
+            btnSuper.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touchState.super.active = false;
+                btnSuper.classList.remove('active');
+            }, { passive: false });
+            
+            // Also support mouse for testing on desktop
+            let joystickDragging = false;
+            
+            joystick.addEventListener('mousedown', (e) => {
+                joystickDragging = true;
+                handleJoystickStart({
+                    touches: [{
+                        identifier: 'mouse',
+                        clientX: e.clientX,
+                        clientY: e.clientY
+                    }],
+                    preventDefault: () => {}
+                });
+            });
+            
+            window.addEventListener('mousemove', (e) => {
+                if (joystickDragging) {
+                    handleJoystickMove({
+                        touches: [{
+                            identifier: 'mouse',
+                            clientX: e.clientX,
+                            clientY: e.clientY
+                        }],
+                        preventDefault: () => {}
+                    });
+                }
+            });
+            
+            window.addEventListener('mouseup', () => {
+                if (joystickDragging) {
+                    joystickDragging = false;
+                    handleJoystickEnd({
+                        touches: [],
+                        preventDefault: () => {}
+                    });
+                }
+            });
+            
+            btnShoot.addEventListener('mousedown', () => {
+                touchState.shoot.active = true;
+                btnShoot.classList.add('active');
+                shoot(player);
+            });
+            
+            btnShoot.addEventListener('mouseup', () => {
+                touchState.shoot.active = false;
+                btnShoot.classList.remove('active');
+            });
+            
+            btnSuper.addEventListener('mousedown', () => {
+                touchState.super.active = true;
+                btnSuper.classList.add('active');
+                useSuper();
+            });
+            
+            btnSuper.addEventListener('mouseup', () => {
+                touchState.super.active = false;
+                btnSuper.classList.remove('active');
+            });
+        }
+        
+        function handleJoystickStart(e) {
+            e.preventDefault();
+            updateJoystickPosition();
+            
+            for (let i = 0; i < e.touches.length; i++) {
+                const touch = e.touches[i];
+                const rect = joystickRect || document.getElementById('joystickContainer').getBoundingClientRect();
+                
+                // Check if touch is on joystick
+                const dx = touch.clientX - (rect.left + rect.width / 2);
+                const dy = touch.clientY - (rect.top + rect.height / 2);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < rect.width) {
+                    touchState.joystick.active = true;
+                    touchState.joystick.touchId = touch.identifier;
+                    touchState.joystick.centerX = rect.left + rect.width / 2;
+                    touchState.joystick.centerY = rect.top + rect.height / 2;
+                    updateJoystickVisual(touch.clientX, touch.clientY);
+                    break;
+                }
+            }
+        }
+        
+        function handleJoystickMove(e) {
+            e.preventDefault();
+            if (!touchState.joystick.active) return;
+            
+            for (let i = 0; i < e.touches.length; i++) {
+                const touch = e.touches[i];
+                if (touch.identifier === touchState.joystick.touchId) {
+                    updateJoystickVisual(touch.clientX, touch.clientY);
+                    break;
+                }
+            }
+        }
+        
+        function handleJoystickEnd(e) {
+            e.preventDefault();
+            
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (touch.identifier === touchState.joystick.touchId) {
+                    touchState.joystick.active = false;
+                    touchState.joystick.touchId = null;
+                    touchState.joystick.dx = 0;
+                    touchState.joystick.dy = 0;
+                    touchState.joystick.force = 0;
+                    
+                    // Reset stick position
+                    const stick = document.getElementById('joystickStick');
+                    stick.style.transform = 'translate(-50%, -50%)';
+                    stick.classList.remove('active');
+                    break;
+                }
+            }
+        }
+        
+        function updateJoystickVisual(clientX, clientY) {
+            const stick = document.getElementById('joystickStick');
+            const maxDist = 35; // Max stick movement
+            
+            let dx = clientX - touchState.joystick.centerX;
+            let dy = clientY - touchState.joystick.centerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Calculate force (0-1)
+            touchState.joystick.force = Math.min(dist / maxDist, 1);
+            
+            // Clamp to max distance
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
+            }
+            
+            touchState.joystick.dx = dx / maxDist;
+            touchState.joystick.dy = dy / maxDist;
+            touchState.joystick.angle = Math.atan2(dy, dx);
+            
+            stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            stick.classList.add('active');
+        }
+        
+        // Aim handling
+        function handleAimStart(e) {
+            e.preventDefault();
+            for (let i = 0; i < e.touches.length; i++) {
+                const touch = e.touches[i];
+                if (!touchState.joystick.active || touch.identifier !== touchState.joystick.touchId) {
+                    touchState.aim.active = true;
+                    touchState.aim.touchId = touch.identifier;
+                    touchState.aim.lastX = touch.clientX;
+                    touchState.aim.lastY = touch.clientY;
+                    
+                    // Set initial aim angle based on touch position
+                    const rect = canvas.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    player.angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
+                    break;
+                }
+            }
+        }
+        
+        function handleAimMove(e) {
+            e.preventDefault();
+            if (!touchState.aim.active) return;
+            
+            for (let i = 0; i < e.touches.length; i++) {
+                const touch = e.touches[i];
+                if (touch.identifier === touchState.aim.touchId) {
+                    const rect = canvas.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    player.angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
+                    break;
+                }
+            }
+        }
+        
+        function handleAimEnd(e) {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (touch.identifier === touchState.aim.touchId) {
+                    touchState.aim.active = false;
+                    touchState.aim.touchId = null;
+                    break;
+                }
+            }
+        }
+        
+        // Keyboard controls (keep for desktop compatibility)
         window.addEventListener('keydown', (e) => {
             keys[e.key.toLowerCase()] = true;
             
-            // Handle character selection keys
             if (!gameRunning) {
-                handleCharacterSelectKey(e);
-                return;
+                // Character selection navigation
+                const currentRow = Math.floor(focusedIndex / cols);
+                const currentCol = focusedIndex % cols;
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (currentRow > 0) focusedIndex -= cols;
+                        updateFocus();
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (currentRow < rows - 1) focusedIndex += cols;
+                        updateFocus();
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        if (currentCol > 0) focusedIndex--;
+                        updateFocus();
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        if (currentCol < cols - 1) focusedIndex++;
+                        updateFocus();
+                        break;
+                    case 'Enter':
+                        e.preventDefault();
+                        if (document.getElementById('charSelector').style.display !== 'none') {
+                            selectedIndex = focusedIndex;
+                            updateSelection();
+                            document.getElementById('startBtn').click();
+                        }
+                        break;
+                }
             }
         });
         
@@ -768,7 +1288,7 @@
             keys[e.key.toLowerCase()] = false;
         });
         
-        // Mouse controls for aiming and shooting
+        // Mouse controls for desktop
         canvas.addEventListener('mousemove', (e) => {
             if (!gameRunning) return;
             const rect = canvas.getBoundingClientRect();
@@ -778,15 +1298,14 @@
         
         canvas.addEventListener('mousedown', (e) => {
             if (!gameRunning) return;
-            if (e.button === 0) { // Left click - shoot
+            if (e.button === 0) {
                 shoot(player);
-            } else if (e.button === 2) { // Right click - super
+            } else if (e.button === 2) {
                 e.preventDefault();
                 useSuper();
             }
         });
         
-        // Prevent context menu on right click
         canvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
@@ -799,7 +1318,6 @@
             shooter.reloadTimer = stats.reloadTime;
             
             if (stats.type === 'shotgun') {
-                // Shotgun spread
                 for (let i = 0; i < stats.spread; i++) {
                     const spreadAngle = (i - stats.spread / 2) * 0.15;
                     bullets.push({
@@ -816,7 +1334,6 @@
                     });
                 }
             } else if (stats.type === 'machinegun') {
-                // Machine gun burst
                 for (let i = 0; i < stats.bulletCount; i++) {
                     setTimeout(() => {
                         bullets.push({
@@ -834,7 +1351,6 @@
                     }, i * 50);
                 }
             } else if (stats.type === 'thrower') {
-                // Arcing projectile
                 bullets.push({
                     x: shooter.x,
                     y: shooter.y,
@@ -850,7 +1366,6 @@
                     arcHeight: 0
                 });
             } else {
-                // Normal shot
                 bullets.push({
                     x: shooter.x + Math.cos(shooter.angle) * 30,
                     y: shooter.y + Math.sin(shooter.angle) * 30,
@@ -876,12 +1391,10 @@
             const stats = player.type;
             
             if (stats.type === 'melee') {
-                // Jump attack
                 const jumpDist = stats.jumpRange;
                 const targetX = player.x + Math.cos(player.angle) * jumpDist;
                 const targetY = player.y + Math.sin(player.angle) * jumpDist;
                 
-                // Damage enemies in landing zone
                 enemies.forEach(enemy => {
                     const dx = enemy.x - targetX;
                     const dy = enemy.y - targetY;
@@ -895,7 +1408,6 @@
                 player.y = targetY;
                 createExplosion(targetX, targetY, '#ff0000', 30);
             } else if (selectedBrawler === 'nita') {
-                // Summon bear
                 if (!player.hasBear) {
                     player.bear = {
                         x: player.x + Math.cos(player.angle) * 50,
@@ -906,7 +1418,6 @@
                     player.hasBear = true;
                 }
             } else {
-                // Super shot
                 for (let i = 0; i < 8; i++) {
                     bullets.push({
                         x: player.x,
@@ -933,13 +1444,11 @@
             enemy.health -= damage;
             enemy.invulnerable = 10;
             
-            // Create damage number
             createDamageNumber(enemy.x, enemy.y, damage);
             
             if (enemy.health <= 0) {
                 createExplosion(enemy.x, enemy.y, '#ff0000', 50);
                 
-                // Respawn enemy
                 enemy.x = Math.random() * MAP_WIDTH;
                 enemy.y = Math.random() * MAP_HEIGHT;
                 enemy.health = enemy.maxHealth;
@@ -1001,11 +1510,17 @@
         
         function updateSuperUI() {
             const superFill = document.getElementById('superFill');
+            const superContainer = document.getElementById('superBarContainer');
+            const btnSuper = document.getElementById('btnSuper');
+            
             superFill.style.width = player.superCharge + '%';
+            
             if (player.superCharge >= 100) {
-                superFill.parentElement.classList.add('super-ready');
+                superContainer.classList.add('super-ready');
+                btnSuper.classList.add('ready');
             } else {
-                superFill.parentElement.classList.remove('super-ready');
+                superContainer.classList.remove('super-ready');
+                btnSuper.classList.remove('ready');
             }
         }
         
@@ -1028,15 +1543,18 @@
         function gameLoop() {
             if (!gameRunning) return;
             
+            if (isPaused) {
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+            
             // Clear canvas
             ctx.fillStyle = '#2d4a3e';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Update camera to follow player
+            // Update camera
             camera.x = player.x - canvas.width / 2;
             camera.y = player.y - canvas.height / 2;
-            
-            // Clamp camera
             camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - canvas.width));
             camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - canvas.height));
             
@@ -1073,7 +1591,7 @@
                 }
             });
             
-            // Update and draw power-ups
+            // Power-ups
             powerups.forEach((powerup, index) => {
                 powerup.pulse += 0.1;
                 const scale = 1 + Math.sin(powerup.pulse) * 0.2;
@@ -1096,7 +1614,6 @@
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 
-                // Icon
                 ctx.fillStyle = '#fff';
                 ctx.font = '16px Arial';
                 ctx.textAlign = 'center';
@@ -1104,7 +1621,6 @@
                 ctx.fillText(icons[powerup.type], 0, 5);
                 ctx.restore();
                 
-                // Check collision with player
                 const dx = player.x - powerup.x;
                 const dy = player.y - powerup.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -1123,15 +1639,21 @@
                 }
             });
             
-            // Update player angle based on mouse position
-            player.angle = Math.atan2(mouseY + camera.y - player.y, mouseX + camera.x - player.x);
-            
-            // Player movement
+            // Player movement - combine keyboard and touch
             let dx = 0, dy = 0;
+            
+            // Keyboard input
             if (keys['w']) dy -= player.speed;
             if (keys['s']) dy += player.speed;
             if (keys['a']) dx -= player.speed;
             if (keys['d']) dx += player.speed;
+            
+            // Touch joystick input
+            if (touchState.joystick.active && touchState.joystick.force > 0.1) {
+                const speed = player.speed * touchState.joystick.force;
+                dx = Math.cos(touchState.joystick.angle) * speed;
+                dy = Math.sin(touchState.joystick.angle) * speed;
+            }
             
             const newX = player.x + dx;
             const newY = player.y + dy;
@@ -1139,11 +1661,15 @@
             if (!checkWallCollision(newX, player.y, player.radius)) player.x = newX;
             if (!checkWallCollision(player.x, newY, player.radius)) player.y = newY;
             
-            // Clamp player to map
             player.x = Math.max(player.radius, Math.min(player.x, MAP_WIDTH - player.radius));
             player.y = Math.max(player.radius, Math.min(player.y, MAP_HEIGHT - player.radius));
             
-            // Reload - always decrement timer, add ammo when timer reaches 0
+            // Mouse aiming (desktop)
+            if (!touchState.aim.active) {
+                player.angle = Math.atan2(mouseY + camera.y - player.y, mouseX + camera.x - player.x);
+            }
+            
+            // Reload
             if (player.reloadTimer > 0) {
                 player.reloadTimer--;
                 if (player.reloadTimer <= 0 && player.ammo < player.maxAmmo) {
@@ -1155,11 +1681,9 @@
             
             if (player.invulnerable > 0) player.invulnerable--;
             
-            // Draw bear if Nita
+            // Draw bear
             if (player.hasBear && player.bear) {
                 const bear = player.bear;
-                
-                // Find nearest enemy
                 let nearest = null;
                 let nearestDist = 300;
                 enemies.forEach(enemy => {
@@ -1195,7 +1719,6 @@
             ctx.save();
             ctx.translate(player.x, player.y);
             
-            // Health ring
             if (player.health < player.maxHealth) {
                 ctx.strokeStyle = `hsl(${player.health / player.maxHealth * 120}, 100%, 50%)`;
                 ctx.lineWidth = 4;
@@ -1206,19 +1729,16 @@
             
             ctx.rotate(player.angle);
             
-            // Body
             ctx.fillStyle = player.type ? player.type.color : '#D2691E';
             ctx.beginPath();
             ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
             ctx.fill();
             
-            // Direction indicator - gun barrel
             ctx.fillStyle = '#333';
             ctx.fillRect(15, -6, 20, 12);
             ctx.fillStyle = '#666';
             ctx.fillRect(18, -4, 14, 8);
             
-            // Fire tip
             ctx.fillStyle = '#ff6600';
             ctx.beginPath();
             ctx.arc(35, 0, 4, 0, Math.PI * 2);
@@ -1226,7 +1746,7 @@
             
             ctx.restore();
             
-            // Draw aim line for keyboard controls
+            // Aim line
             ctx.save();
             ctx.translate(player.x, player.y);
             ctx.rotate(player.angle);
@@ -1239,9 +1759,8 @@
             ctx.stroke();
             ctx.restore();
             
-            // Draw enemies
+            // Enemies
             enemies.forEach(enemy => {
-                // AI movement
                 enemy.moveTimer--;
                 if (enemy.moveTimer <= 0) {
                     enemy.targetX = Math.random() * MAP_WIDTH;
@@ -1257,7 +1776,6 @@
                 if (!checkWallCollision(newEX, enemy.y, enemy.radius)) enemy.x = newEX;
                 if (!checkWallCollision(enemy.x, newEY, enemy.radius)) enemy.y = newEY;
                 
-                // AI shooting
                 const distToPlayer = Math.sqrt((player.x - enemy.x) ** 2 + (player.y - enemy.y) ** 2);
                 if (distToPlayer < enemy.type.range && enemy.ammo > 0 && enemy.reloadTimer <= 0) {
                     enemy.angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
@@ -1267,7 +1785,6 @@
                 if (enemy.reloadTimer > 0) enemy.reloadTimer--;
                 if (enemy.invulnerable > 0) enemy.invulnerable--;
                 
-                // Draw enemy
                 ctx.save();
                 ctx.translate(enemy.x, enemy.y);
                 
@@ -1279,7 +1796,6 @@
                     ctx.stroke();
                 }
                 
-                // Team indicator
                 ctx.fillStyle = enemy.team === 'red' ? 'rgba(255,0,0,0.3)' : 'rgba(0,0,255,0.3)';
                 ctx.beginPath();
                 ctx.arc(0, 0, enemy.radius + 5, 0, Math.PI * 2);
@@ -1298,7 +1814,7 @@
                 ctx.restore();
             });
             
-            // Update and draw bullets
+            // Bullets
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const b = bullets[i];
                 
@@ -1313,7 +1829,6 @@
                 
                 b.traveled += b.speed;
                 
-                // Wall collision
                 if (checkWallCollision(b.x, b.y, 5)) {
                     if (b.type === 'ricochet' && b.bounces > 0) {
                         b.angle = -b.angle;
@@ -1325,19 +1840,16 @@
                     }
                 }
                 
-                // Range check
                 if (b.traveled > b.range) {
                     bullets.splice(i, 1);
                     continue;
                 }
                 
-                // Draw bullet
                 ctx.fillStyle = b.color;
                 ctx.beginPath();
                 ctx.arc(b.x, b.y, b.isMelee ? 40 : (b.isSuper ? 8 : 5), 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Glow effect
                 if (b.isSuper) {
                     ctx.fillStyle = 'rgba(255,0,255,0.3)';
                     ctx.beginPath();
@@ -1345,7 +1857,6 @@
                     ctx.fill();
                 }
                 
-                // Check collision with enemies
                 if (b.owner === player) {
                     enemies.forEach(enemy => {
                         const dx = enemy.x - b.x;
@@ -1362,7 +1873,6 @@
                         }
                     });
                 } else {
-                    // Enemy bullet hitting player
                     const dx = player.x - b.x;
                     const dy = player.y - b.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -1385,7 +1895,7 @@
                 }
             }
             
-            // Update and draw particles
+            // Particles
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.x += p.vx;
@@ -1416,6 +1926,10 @@
             
             requestAnimationFrame(gameLoop);
         }
+        
+        // Initialize
+        initTouchControls();
+        resizeCanvas();
     </script>
 </body>
 </html>
