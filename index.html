@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>荒野乱斗 - Brawl Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.3);
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: #2d4a3e;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        
+        .health-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #fff;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ff8844);
+            transition: width 0.2s;
+        }
+        
+        .health-bar-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .health-bar-container .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff3838, #ff8c42, #ffdd42);
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .health-bar-container .health-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: healthShine 2s infinite;
+        }
+        
+        @keyframes healthShine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .health-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-weight: bold;
+            font-size: 12px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+        
+        .super-bar-container {
+            position: absolute;
+            bottom: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .super-bar-container .super-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899, #f59e0b);
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .super-bar-container .super-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            animation: superShine 1.5s infinite;
+        }
+        
+        @keyframes superShine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .super-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+        
+        .ammo-bar {
+            position: absolute;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+        }
+        
+        .ammo-bullet {
+            width: 15px;
+            height: 25px;
+            background: linear-gradient(180deg, #ffff44, #ffaa00);
+            border-radius: 3px;
+            border: 1px solid #fff;
+            transition: opacity 0.2s;
+        }
+        
+        .ammo-bullet.empty {
+            opacity: 0.3;
+        }
+        
+        .ammo-bullet.reloading {
+            background: linear-gradient(135deg, #00bfff, #0080ff);
+            animation: reloadPulse 0.5s infinite;
+        }
+        
+        @keyframes reloadPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 191, 255, 0.5); }
+            50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(0, 191, 255, 0.8); }
+        }
+        
+        .score-board {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .character-selector {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            pointer-events: all;
+        }
+        
+        .character-selector h2 {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .brawler-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .brawler-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 3px solid transparent;
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .brawler-card:hover, .brawler-card.focused {
+            transform: scale(1.05);
+            border-color: #fff;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+        
+        .brawler-card.selected {
+            border-color: #ffff00;
+            box-shadow: 0 0 30px rgba(255,255,0,0.6);
+        }
+        
+        .brawler-card.focused::before {
+            content: '▶';
+            position: absolute;
+            left: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ffff00;
+            font-size: 24px;
+            animation: pulse 0.8s infinite;
+        }
+        
+        .keyboard-hint {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        
+        .keyboard-hint span {
+            background: rgba(255,255,255,0.2);
+            padding: 3px 8px;
+            border-radius: 5px;
+            margin: 0 3px;
+            color: #fff;
+        }
+        
+        .brawler-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+        }
+        
+        .brawler-card h3 {
+            color: #fff;
+            font-size: 16px;
+        }
+        
+        .brawler-card p {
+            color: #aaa;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .start-btn {
+            background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #fff;
+            font-size: 14px;
+            text-align: right;
+            opacity: 0.7;
+        }
+        
+        .kill-feed {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #fff;
+            font-size: 14px;
+            text-align: right;
+        }
+        
+        .kill-message {
+            background: rgba(0,0,0,0.6);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            animation: slideIn 0.5s;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .super-charge {
+            position: absolute;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 10px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #fff;
+        }
+        
+        .super-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff00ff, #ff00aa);
+            transition: width 0.2s;
+        }
+        
+        .super-ready {
+            animation: pulse 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 5px #ff00ff; }
+            50% { box-shadow: 0 0 20px #ff00ff, 0 0 30px #ff00ff; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        
+        <div class="ui-overlay">
+            <div class="score-board">
+                <div>🔴 红队: <span id="redScore">0</span></div>
+                <div>🔵 蓝队: <span id="blueScore">0</span></div>
+                <div>击杀: <span id="kills">0</span></div>
+            </div>
+            
+            <div class="kill-feed" id="killFeed"></div>
+            
+            <div class="health-bar-container">
+                <div class="health-fill" id="healthFill" style="width: 100%"></div>
+                <div class="health-label">HP</div>
+            </div>
+            
+            <div class="super-bar-container">
+                <div class="super-fill" id="superFill" style="width: 0%"></div>
+                <div class="super-label">SUPER</div>
+            </div>
+            
+            <div class="ammo-bar" id="ammoBar">
+                <div class="ammo-bullet"></div>
+                <div class="ammo-bullet"></div>
+                <div class="ammo-bullet"></div>
+            </div>
+            
+            <div class="controls-hint" id="controlsHint">
+                选择: ↑↓←→ | 开始: Enter | 游戏中: WASD移动 鼠标瞄准 左键射击 右键大招
+            </div>
+        </div>
+        
+        <div class="character-selector" id="charSelector">
+            <h2>🎮 选择你的英雄</h2>
+            <div class="brawler-grid">
+                <div class="brawler-card" data-brawler="shelly">
+                    <div class="brawler-icon" style="background: linear-gradient(135deg, #8B4513, #D2691E);"></div>
+                    <h3>雪莉</h3>
+                    <p>散弹枪 | 高爆发</p>
+                </div>
+                <div class="brawler-card" data-brawler="colt">
+                    <div class="brawler-icon" style="background: linear-gradient(135deg, #4169E1, #87CEEB);"></div>
+                    <h3>柯尔特</h3>
+                    <p>双枪 | 远程</p>
+                </div>
+                <div class="brawler-card" data-brawler="elprimo">
+                    <div class="brawler-icon" style="background: linear-gradient(135deg, #DC143C, #FF6347);"></div>
+                    <h3>艾尔·普里莫</h3>
+                    <p>摔跤手 | 近战</p>
+                </div>
+                <div class="brawler-card" data-brawler="rico">
+                    <div class="brawler-icon" style="background: linear-gradient(135deg, #32CD32, #98FB98);"></div>
+                    <h3>瑞科</h3>
+                    <p>弹球 | 技巧</p>
+                </div>
+                <div class="brawler-card" data-brawler="nita">
+                    <div class="brawler-icon" style="background: linear-gradient(135deg, #9932CC, #DDA0DD);"></div>
+                    <h3>妮塔</h3>
+                    <p>召唤 | 持续</p>
+                </div>
+                <div class="brawler-card" data-brawler="dynamike">
+                    <div class="brawler-icon" style="background: linear-gradient(135deg, #FFD700, #FFA500);"></div>
+                    <h3>爆破麦克</h3>
+                    <p>炸弹 | 范围</p>
+                </div>
+            </div>
+            <button class="start-btn" id="startBtn">开始游戏 [回车]</button>
+            <div class="keyboard-hint">
+                <span>↑</span><span>↓</span><span>←</span><span>→</span> 选择英雄 | <span>Enter</span> 确认
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameRunning = false;
+        let selectedBrawler = null;
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        // Camera
+        let camera = { x: 0, y: 0 };
+        
+        // Map
+        const MAP_WIDTH = 2000;
+        const MAP_HEIGHT = 1500;
+        
+        // Walls and obstacles
+        const walls = [
+            // Center walls
+            { x: 800, y: 600, width: 60, height: 300 },
+            { x: 1140, y: 600, width: 60, height: 300 },
+            { x: 800, y: 600, width: 400, height: 60 },
+            
+            // Corner walls
+            { x: 200, y: 200, width: 150, height: 150 },
+            { x: 1650, y: 200, width: 150, height: 150 },
+            { x: 200, y: 1150, width: 150, height: 150 },
+            { x: 1650, y: 1150, width: 150, height: 150 },
+            
+            // Side bushes
+            { x: 500, y: 400, width: 100, height: 100, type: 'bush' },
+            { x: 1400, y: 400, width: 100, height: 100, type: 'bush' },
+            { x: 500, y: 1000, width: 100, height: 100, type: 'bush' },
+            { x: 1400, y: 1000, width: 100, height: 100, type: 'bush' },
+        ];
+        
+        // Brawler types
+        const brawlerTypes = {
+            shelly: {
+                name: '雪莉',
+                color: '#D2691E',
+                maxHealth: 3600,
+                speed: 3.5,
+                damage: 420,
+                range: 150,
+                reloadTime: 30,
+                ammo: 3,
+                superDamage: 800,
+                spread: 5,
+                type: 'shotgun'
+            },
+            colt: {
+                name: '柯尔特',
+                color: '#4169E1',
+                maxHealth: 2800,
+                speed: 4,
+                damage: 360,
+                range: 280,
+                reloadTime: 25,
+                ammo: 6,
+                superDamage: 400,
+                bulletCount: 6,
+                type: 'machinegun'
+            },
+            elprimo: {
+                name: '艾尔·普里莫',
+                color: '#DC143C',
+                maxHealth: 5800,
+                speed: 5,
+                damage: 480,
+                range: 60,
+                reloadTime: 40,
+                ammo: 3,
+                superDamage: 800,
+                jumpRange: 200,
+                type: 'melee'
+            },
+            rico: {
+                name: '瑞科',
+                color: '#32CD32',
+                maxHealth: 2600,
+                speed: 4,
+                damage: 320,
+                range: 300,
+                reloadTime: 22,
+                ammo: 5,
+                superDamage: 320,
+                bounces: 3,
+                type: 'ricochet'
+            },
+            nita: {
+                name: '妮塔',
+                color: '#9932CC',
+                maxHealth: 4000,
+                speed: 3.8,
+                damage: 960,
+                range: 180,
+                reloadTime: 35,
+                ammo: 3,
+                superDamage: 0,
+                type: 'summoner'
+            },
+            dynamike: {
+                name: '爆破麦克',
+                color: '#FFD700',
+                maxHealth: 2800,
+                speed: 3.5,
+                damage: 800,
+                range: 220,
+                reloadTime: 35,
+                ammo: 3,
+                superDamage: 1200,
+                type: 'thrower'
+            }
+        };
+        
+        // Player
+        const player = {
+            x: MAP_WIDTH / 2,
+            y: MAP_HEIGHT / 2,
+            radius: 20,
+            angle: 0,
+            health: 100,
+            maxHealth: 100,
+            ammo: 3,
+            maxAmmo: 3,
+            reloadTimer: 0,
+            superCharge: 0,
+            team: 'red',
+            kills: 0,
+            type: null,
+            invulnerable: 0,
+            hasBear: false,
+            bear: null
+        };
+        
+        // Enemies
+        const enemies = [];
+        const enemyCount = 5;
+        
+        // Bullets
+        const bullets = [];
+        
+        // Particles
+        const particles = [];
+        
+        // Power-ups
+        const powerups = [];
+        
+        // Keys
+        const keys = {};
+        
+        // Character selection with keyboard
+        const brawlerCards = document.querySelectorAll('.brawler-card');
+        let focusedIndex = 0;
+        let selectedIndex = -1;
+        const cols = 3;
+        const rows = 2;
+        
+        function updateFocus() {
+            brawlerCards.forEach((card, index) => {
+                card.classList.remove('focused');
+                if (index === focusedIndex) {
+                    card.classList.add('focused');
+                }
+            });
+        }
+        
+        function updateSelection() {
+            brawlerCards.forEach((card, index) => {
+                card.classList.remove('selected');
+                if (index === selectedIndex) {
+                    card.classList.add('selected');
+                }
+            });
+            selectedBrawler = selectedIndex >= 0 ? brawlerCards[selectedIndex].dataset.brawler : null;
+        }
+        
+        // Initial focus
+        updateFocus();
+        
+        // Keyboard navigation for character selection
+        function handleCharacterSelectKey(e) {
+            if (gameRunning) return;
+            
+            const currentRow = Math.floor(focusedIndex / cols);
+            const currentCol = focusedIndex % cols;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (currentRow > 0) focusedIndex -= cols;
+                    updateFocus();
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (currentRow < rows - 1) focusedIndex += cols;
+                    updateFocus();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    if (currentCol > 0) focusedIndex--;
+                    updateFocus();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    if (currentCol < cols - 1) focusedIndex++;
+                    updateFocus();
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (document.getElementById('charSelector').style.display !== 'none') {
+                        selectedIndex = focusedIndex;
+                        updateSelection();
+                        // Auto start game after selection
+                        setTimeout(() => {
+                            document.getElementById('startBtn').click();
+                        }, 200);
+                    }
+                    break;
+            }
+        }
+        
+        // Mouse click fallback (optional)
+        brawlerCards.forEach((card, index) => {
+            card.addEventListener('click', () => {
+                focusedIndex = index;
+                selectedIndex = index;
+                updateFocus();
+                updateSelection();
+            });
+        });
+        
+        // Start game
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (selectedBrawler === null) {
+                // Auto-select focused brawler if none selected
+                selectedIndex = focusedIndex;
+                selectedBrawler = brawlerCards[focusedIndex].dataset.brawler;
+                updateSelection();
+            }
+            
+            // Hide character selector
+            document.getElementById('charSelector').style.display = 'none';
+            
+            // Update controls hint for in-game
+            document.getElementById('controlsHint').textContent = 'WASD移动 | 鼠标瞄准 | 左键射击 | 空格大招';
+            initGame();
+            gameRunning = true;
+            gameLoop();
+        });
+        
+        function initGame() {
+            // Update controls hint for in-game
+            document.getElementById('controlsHint').innerHTML = 'WASD移动 | 鼠标瞄准 | <span style="color:#ffff00">左键</span>射击 | <span style="color:#ff00ff">右键</span>大招';
+            
+            const stats = brawlerTypes[selectedBrawler];
+            player.type = stats;
+            player.health = stats.maxHealth;
+            player.maxHealth = stats.maxHealth;
+            player.ammo = stats.ammo;
+            player.maxAmmo = stats.ammo;
+            player.speed = stats.speed;
+            player.reloadTimer = 0;  // Reset reload timer on game start
+            player.superCharge = 0;  // Reset super charge
+            
+            // Spawn enemies
+            const types = Object.keys(brawlerTypes);
+            for (let i = 0; i < enemyCount; i++) {
+                const typeKey = types[Math.floor(Math.random() * types.length)];
+                const type = brawlerTypes[typeKey];
+                const isRed = Math.random() > 0.5;
+                
+                enemies.push({
+                    x: Math.random() * MAP_WIDTH,
+                    y: Math.random() * MAP_HEIGHT,
+                    radius: 20,
+                    angle: 0,
+                    health: type.maxHealth,
+                    maxHealth: type.maxHealth,
+                    ammo: type.ammo,
+                    maxAmmo: type.ammo,
+                    reloadTimer: 0,
+                    team: isRed ? 'red' : 'blue',
+                    type: type,
+                    moveTimer: 0,
+                    shootTimer: 0,
+                    angleTimer: 0,
+                    targetX: Math.random() * MAP_WIDTH,
+                    targetY: Math.random() * MAP_HEIGHT,
+                    invulnerable: 0
+                });
+            }
+            
+            // Spawn power-ups
+            for (let i = 0; i < 8; i++) {
+                spawnPowerup();
+            }
+        }
+        
+        function spawnPowerup() {
+            const types = ['health', 'ammo', 'speed', 'shield'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            powerups.push({
+                x: Math.random() * MAP_WIDTH,
+                y: Math.random() * MAP_HEIGHT,
+                type: type,
+                radius: 15,
+                pulse: 0
+            });
+        }
+        
+        // Input handling
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            
+            // Handle character selection keys
+            if (!gameRunning) {
+                handleCharacterSelectKey(e);
+                return;
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Mouse controls for aiming and shooting
+        canvas.addEventListener('mousemove', (e) => {
+            if (!gameRunning) return;
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+        
+        canvas.addEventListener('mousedown', (e) => {
+            if (!gameRunning) return;
+            if (e.button === 0) { // Left click - shoot
+                shoot(player);
+            } else if (e.button === 2) { // Right click - super
+                e.preventDefault();
+                useSuper();
+            }
+        });
+        
+        // Prevent context menu on right click
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        function shoot(shooter) {
+            if (shooter.ammo <= 0 || shooter.reloadTimer > 0) return;
+            
+            const stats = shooter.type || brawlerTypes[selectedBrawler];
+            shooter.ammo--;
+            shooter.reloadTimer = stats.reloadTime;
+            
+            if (stats.type === 'shotgun') {
+                // Shotgun spread
+                for (let i = 0; i < stats.spread; i++) {
+                    const spreadAngle = (i - stats.spread / 2) * 0.15;
+                    bullets.push({
+                        x: shooter.x + Math.cos(shooter.angle) * 30,
+                        y: shooter.y + Math.sin(shooter.angle) * 30,
+                        angle: shooter.angle + spreadAngle,
+                        speed: 12,
+                        damage: stats.damage / stats.spread,
+                        range: stats.range,
+                        traveled: 0,
+                        owner: shooter,
+                        team: shooter.team,
+                        color: '#ffff00'
+                    });
+                }
+            } else if (stats.type === 'machinegun') {
+                // Machine gun burst
+                for (let i = 0; i < stats.bulletCount; i++) {
+                    setTimeout(() => {
+                        bullets.push({
+                            x: shooter.x + Math.cos(shooter.angle) * 30,
+                            y: shooter.y + Math.sin(shooter.angle) * 30,
+                            angle: shooter.angle + (Math.random() - 0.5) * 0.1,
+                            speed: 15,
+                            damage: stats.damage,
+                            range: stats.range,
+                            traveled: 0,
+                            owner: shooter,
+                            team: shooter.team,
+                            color: '#ffff00'
+                        });
+                    }, i * 50);
+                }
+            } else if (stats.type === 'thrower') {
+                // Arcing projectile
+                bullets.push({
+                    x: shooter.x,
+                    y: shooter.y,
+                    angle: shooter.angle,
+                    speed: 8,
+                    damage: stats.damage,
+                    range: stats.range,
+                    traveled: 0,
+                    owner: shooter,
+                    team: shooter.team,
+                    color: '#ff6600',
+                    arc: true,
+                    arcHeight: 0
+                });
+            } else {
+                // Normal shot
+                bullets.push({
+                    x: shooter.x + Math.cos(shooter.angle) * 30,
+                    y: shooter.y + Math.sin(shooter.angle) * 30,
+                    angle: shooter.angle,
+                    speed: stats.type === 'melee' ? 0 : 12,
+                    damage: stats.damage,
+                    range: stats.range,
+                    traveled: 0,
+                    owner: shooter,
+                    team: shooter.team,
+                    color: stats.type === 'melee' ? '#ff0000' : '#ffff00',
+                    isMelee: stats.type === 'melee'
+                });
+            }
+            
+            updateAmmoUI();
+        }
+        
+        function useSuper() {
+            if (player.superCharge < 100) return;
+            
+            player.superCharge = 0;
+            const stats = player.type;
+            
+            if (stats.type === 'melee') {
+                // Jump attack
+                const jumpDist = stats.jumpRange;
+                const targetX = player.x + Math.cos(player.angle) * jumpDist;
+                const targetY = player.y + Math.sin(player.angle) * jumpDist;
+                
+                // Damage enemies in landing zone
+                enemies.forEach(enemy => {
+                    const dx = enemy.x - targetX;
+                    const dy = enemy.y - targetY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 100) {
+                        damageEnemy(enemy, stats.superDamage, player);
+                    }
+                });
+                
+                player.x = targetX;
+                player.y = targetY;
+                createExplosion(targetX, targetY, '#ff0000', 30);
+            } else if (selectedBrawler === 'nita') {
+                // Summon bear
+                if (!player.hasBear) {
+                    player.bear = {
+                        x: player.x + Math.cos(player.angle) * 50,
+                        y: player.y + Math.sin(player.angle) * 50,
+                        health: 4000,
+                        target: null
+                    };
+                    player.hasBear = true;
+                }
+            } else {
+                // Super shot
+                for (let i = 0; i < 8; i++) {
+                    bullets.push({
+                        x: player.x,
+                        y: player.y,
+                        angle: player.angle + (i - 4) * 0.2,
+                        speed: 15,
+                        damage: stats.superDamage,
+                        range: stats.range * 1.5,
+                        traveled: 0,
+                        owner: player,
+                        team: player.team,
+                        color: '#ff00ff',
+                        isSuper: true
+                    });
+                }
+            }
+            
+            updateSuperUI();
+        }
+        
+        function damageEnemy(enemy, damage, attacker) {
+            if (enemy.invulnerable > 0) return;
+            
+            enemy.health -= damage;
+            enemy.invulnerable = 10;
+            
+            // Create damage number
+            createDamageNumber(enemy.x, enemy.y, damage);
+            
+            if (enemy.health <= 0) {
+                createExplosion(enemy.x, enemy.y, '#ff0000', 50);
+                
+                // Respawn enemy
+                enemy.x = Math.random() * MAP_WIDTH;
+                enemy.y = Math.random() * MAP_HEIGHT;
+                enemy.health = enemy.maxHealth;
+                enemy.ammo = enemy.maxAmmo;
+                
+                if (attacker === player) {
+                    player.kills++;
+                    document.getElementById('kills').textContent = player.kills;
+                    addKillFeed(player.type.name, enemy.type.name);
+                }
+            }
+        }
+        
+        function createExplosion(x, y, color, size) {
+            for (let i = 0; i < size; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 30,
+                    color: color,
+                    size: Math.random() * 5 + 2
+                });
+            }
+        }
+        
+        function createDamageNumber(x, y, damage) {
+            particles.push({
+                x: x,
+                y: y - 30,
+                vx: 0,
+                vy: -2,
+                life: 40,
+                text: Math.floor(damage),
+                isText: true
+            });
+        }
+        
+        function addKillFeed(killer, victim) {
+            const feed = document.getElementById('killFeed');
+            const msg = document.createElement('div');
+            msg.className = 'kill-message';
+            msg.innerHTML = `<span style="color:#ffff00">${killer}</span> 💀 ${victim}`;
+            feed.appendChild(msg);
+            setTimeout(() => msg.remove(), 3000);
+        }
+        
+        function updateAmmoUI() {
+            const ammoBar = document.getElementById('ammoBar');
+            ammoBar.innerHTML = '';
+            for (let i = 0; i < player.maxAmmo; i++) {
+                const bullet = document.createElement('div');
+                bullet.className = 'ammo-bullet';
+                if (i >= player.ammo) bullet.classList.add('empty');
+                ammoBar.appendChild(bullet);
+            }
+        }
+        
+        function updateSuperUI() {
+            const superFill = document.getElementById('superFill');
+            superFill.style.width = player.superCharge + '%';
+            if (player.superCharge >= 100) {
+                superFill.parentElement.classList.add('super-ready');
+            } else {
+                superFill.parentElement.classList.remove('super-ready');
+            }
+        }
+        
+        function updateHealthUI() {
+            const healthFill = document.getElementById('healthFill');
+            healthFill.style.width = (player.health / player.maxHealth * 100) + '%';
+        }
+        
+        function checkWallCollision(x, y, radius) {
+            for (const wall of walls) {
+                if (wall.type === 'bush') continue;
+                if (x + radius > wall.x && x - radius < wall.x + wall.width &&
+                    y + radius > wall.y && y - radius < wall.y + wall.height) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            // Clear canvas
+            ctx.fillStyle = '#2d4a3e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Update camera to follow player
+            camera.x = player.x - canvas.width / 2;
+            camera.y = player.y - canvas.height / 2;
+            
+            // Clamp camera
+            camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - canvas.width));
+            camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - canvas.height));
+            
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= MAP_WIDTH; x += 100) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, MAP_HEIGHT);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= MAP_HEIGHT; y += 100) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(MAP_WIDTH, y);
+                ctx.stroke();
+            }
+            
+            // Draw walls
+            walls.forEach(wall => {
+                if (wall.type === 'bush') {
+                    ctx.fillStyle = 'rgba(34, 139, 34, 0.7)';
+                    ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+                } else {
+                    ctx.fillStyle = '#666';
+                    ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+                    ctx.strokeStyle = '#888';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(wall.x, wall.y, wall.width, wall.height);
+                }
+            });
+            
+            // Update and draw power-ups
+            powerups.forEach((powerup, index) => {
+                powerup.pulse += 0.1;
+                const scale = 1 + Math.sin(powerup.pulse) * 0.2;
+                
+                const colors = {
+                    health: '#ff4444',
+                    ammo: '#ffff44',
+                    speed: '#4444ff',
+                    shield: '#44ffff'
+                };
+                
+                ctx.save();
+                ctx.translate(powerup.x, powerup.y);
+                ctx.scale(scale, scale);
+                ctx.fillStyle = colors[powerup.type];
+                ctx.beginPath();
+                ctx.arc(0, 0, powerup.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Icon
+                ctx.fillStyle = '#fff';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                const icons = { health: '❤', ammo: '🔫', speed: '⚡', shield: '🛡' };
+                ctx.fillText(icons[powerup.type], 0, 5);
+                ctx.restore();
+                
+                // Check collision with player
+                const dx = player.x - powerup.x;
+                const dy = player.y - powerup.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < player.radius + powerup.radius) {
+                    if (powerup.type === 'health') {
+                        player.health = Math.min(player.health + 1000, player.maxHealth);
+                    } else if (powerup.type === 'ammo') {
+                        player.ammo = player.maxAmmo;
+                        player.reloadTimer = 0;
+                    }
+                    powerups.splice(index, 1);
+                    spawnPowerup();
+                    updateAmmoUI();
+                    updateHealthUI();
+                }
+            });
+            
+            // Update player angle based on mouse position
+            player.angle = Math.atan2(mouseY + camera.y - player.y, mouseX + camera.x - player.x);
+            
+            // Player movement
+            let dx = 0, dy = 0;
+            if (keys['w']) dy -= player.speed;
+            if (keys['s']) dy += player.speed;
+            if (keys['a']) dx -= player.speed;
+            if (keys['d']) dx += player.speed;
+            
+            const newX = player.x + dx;
+            const newY = player.y + dy;
+            
+            if (!checkWallCollision(newX, player.y, player.radius)) player.x = newX;
+            if (!checkWallCollision(player.x, newY, player.radius)) player.y = newY;
+            
+            // Clamp player to map
+            player.x = Math.max(player.radius, Math.min(player.x, MAP_WIDTH - player.radius));
+            player.y = Math.max(player.radius, Math.min(player.y, MAP_HEIGHT - player.radius));
+            
+            // Reload - always decrement timer, add ammo when timer reaches 0
+            if (player.reloadTimer > 0) {
+                player.reloadTimer--;
+                if (player.reloadTimer <= 0 && player.ammo < player.maxAmmo) {
+                    player.ammo++;
+                    player.reloadTimer = player.type.reloadTime;
+                    updateAmmoUI();
+                }
+            }
+            
+            if (player.invulnerable > 0) player.invulnerable--;
+            
+            // Draw bear if Nita
+            if (player.hasBear && player.bear) {
+                const bear = player.bear;
+                
+                // Find nearest enemy
+                let nearest = null;
+                let nearestDist = 300;
+                enemies.forEach(enemy => {
+                    const dist = Math.sqrt((enemy.x - bear.x) ** 2 + (enemy.y - bear.y) ** 2);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearest = enemy;
+                    }
+                });
+                
+                if (nearest) {
+                    const angle = Math.atan2(nearest.y - bear.y, nearest.x - bear.x);
+                    bear.x += Math.cos(angle) * 3;
+                    bear.y += Math.sin(angle) * 3;
+                    
+                    if (nearestDist < 40) {
+                        nearest.health -= 200;
+                        if (nearest.health <= 0) damageEnemy(nearest, 0, player);
+                    }
+                }
+                
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.arc(bear.x, bear.y, 25, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(bear.x, bear.y - 15, 15, Math.PI, 0);
+                ctx.fill();
+            }
+            
+            // Draw player
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            
+            // Health ring
+            if (player.health < player.maxHealth) {
+                ctx.strokeStyle = `hsl(${player.health / player.maxHealth * 120}, 100%, 50%)`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(0, 0, player.radius + 8, 0, Math.PI * 2 * (player.health / player.maxHealth));
+                ctx.stroke();
+            }
+            
+            ctx.rotate(player.angle);
+            
+            // Body
+            ctx.fillStyle = player.type ? player.type.color : '#D2691E';
+            ctx.beginPath();
+            ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Direction indicator - gun barrel
+            ctx.fillStyle = '#333';
+            ctx.fillRect(15, -6, 20, 12);
+            ctx.fillStyle = '#666';
+            ctx.fillRect(18, -4, 14, 8);
+            
+            // Fire tip
+            ctx.fillStyle = '#ff6600';
+            ctx.beginPath();
+            ctx.arc(35, 0, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // Draw aim line for keyboard controls
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(30, 0);
+            ctx.lineTo(player.type ? player.type.range : 200, 0);
+            ctx.stroke();
+            ctx.restore();
+            
+            // Draw enemies
+            enemies.forEach(enemy => {
+                // AI movement
+                enemy.moveTimer--;
+                if (enemy.moveTimer <= 0) {
+                    enemy.targetX = Math.random() * MAP_WIDTH;
+                    enemy.targetY = Math.random() * MAP_HEIGHT;
+                    enemy.moveTimer = 100 + Math.random() * 100;
+                }
+                
+                const angle = Math.atan2(enemy.targetY - enemy.y, enemy.targetX - enemy.x);
+                const speed = enemy.type.speed;
+                const newEX = enemy.x + Math.cos(angle) * speed;
+                const newEY = enemy.y + Math.sin(angle) * speed;
+                
+                if (!checkWallCollision(newEX, enemy.y, enemy.radius)) enemy.x = newEX;
+                if (!checkWallCollision(enemy.x, newEY, enemy.radius)) enemy.y = newEY;
+                
+                // AI shooting
+                const distToPlayer = Math.sqrt((player.x - enemy.x) ** 2 + (player.y - enemy.y) ** 2);
+                if (distToPlayer < enemy.type.range && enemy.ammo > 0 && enemy.reloadTimer <= 0) {
+                    enemy.angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                    shoot(enemy);
+                }
+                
+                if (enemy.reloadTimer > 0) enemy.reloadTimer--;
+                if (enemy.invulnerable > 0) enemy.invulnerable--;
+                
+                // Draw enemy
+                ctx.save();
+                ctx.translate(enemy.x, enemy.y);
+                
+                if (enemy.health < enemy.maxHealth) {
+                    ctx.strokeStyle = `hsl(${enemy.health / enemy.maxHealth * 120}, 100%, 50%)`;
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, enemy.radius + 8, 0, Math.PI * 2 * (enemy.health / enemy.maxHealth));
+                    ctx.stroke();
+                }
+                
+                // Team indicator
+                ctx.fillStyle = enemy.team === 'red' ? 'rgba(255,0,0,0.3)' : 'rgba(0,0,255,0.3)';
+                ctx.beginPath();
+                ctx.arc(0, 0, enemy.radius + 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.rotate(enemy.angle);
+                
+                ctx.fillStyle = enemy.type.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(10, -5, 15, 10);
+                
+                ctx.restore();
+            });
+            
+            // Update and draw bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                
+                if (b.arc) {
+                    b.x += Math.cos(b.angle) * b.speed;
+                    b.arcHeight += 0.5;
+                    if (b.arcHeight > 10) b.arcHeight = 10;
+                } else if (!b.isMelee) {
+                    b.x += Math.cos(b.angle) * b.speed;
+                    b.y += Math.sin(b.angle) * b.speed;
+                }
+                
+                b.traveled += b.speed;
+                
+                // Wall collision
+                if (checkWallCollision(b.x, b.y, 5)) {
+                    if (b.type === 'ricochet' && b.bounces > 0) {
+                        b.angle = -b.angle;
+                        b.bounces--;
+                    } else {
+                        createExplosion(b.x, b.y, '#ffff00', 10);
+                        bullets.splice(i, 1);
+                        continue;
+                    }
+                }
+                
+                // Range check
+                if (b.traveled > b.range) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                
+                // Draw bullet
+                ctx.fillStyle = b.color;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.isMelee ? 40 : (b.isSuper ? 8 : 5), 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Glow effect
+                if (b.isSuper) {
+                    ctx.fillStyle = 'rgba(255,0,255,0.3)';
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Check collision with enemies
+                if (b.owner === player) {
+                    enemies.forEach(enemy => {
+                        const dx = enemy.x - b.x;
+                        const dy = enemy.y - b.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < enemy.radius + (b.isMelee ? 40 : 10) && enemy.invulnerable <= 0) {
+                            damageEnemy(enemy, b.damage, player);
+                            if (player.superCharge < 100) {
+                                player.superCharge = Math.min(100, player.superCharge + 10);
+                                updateSuperUI();
+                            }
+                            if (!b.isMelee) bullets.splice(i, 1);
+                        }
+                    });
+                } else {
+                    // Enemy bullet hitting player
+                    const dx = player.x - b.x;
+                    const dy = player.y - b.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < player.radius + 10 && player.invulnerable <= 0) {
+                        player.health -= b.damage;
+                        player.invulnerable = 20;
+                        createDamageNumber(player.x, player.y, b.damage);
+                        updateHealthUI();
+                        
+                        if (player.health <= 0) {
+                            player.health = player.maxHealth;
+                            player.x = MAP_WIDTH / 2;
+                            player.y = MAP_HEIGHT / 2;
+                            createExplosion(player.x, player.y, '#ff0000', 50);
+                        }
+                        
+                        bullets.splice(i, 1);
+                    }
+                }
+            }
+            
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                
+                if (p.isText) {
+                    ctx.fillStyle = `rgba(255,255,255,${p.life / 40})`;
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(p.text, p.x, p.y);
+                } else {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life / 30;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+            
+            ctx.restore();
+            
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
